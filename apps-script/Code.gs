@@ -507,12 +507,24 @@ function maintain_() {
   }
   try {
     if (lock) {
+      // Opening the Sheet after pasting in a new version is enough: missing tabs appear on their own.
+      try { announceTabs_(ensureTabs_()); } catch (err) { console.error(err); }
       try { ensureSchedule_(); } catch (err) { console.error(err); }
       try { archivePast_(); } catch (err) { console.error(err); }
     }
     buildOverview_();
   } finally {
     if (lock) lock.releaseLock();
+  }
+}
+
+function announceTabs_(change) {
+  const what = {
+    migrated: 'Nights is now the Schedule tab, with a row for every run this week and next.',
+    created: 'New Schedule tab, with a row for every run this week and next.'
+  }[change];
+  if (what) {
+    SpreadsheetApp.getActiveSpreadsheet().toast(what + ' To move a run, change its Date or Time.', 'Sign-up board', 15);
   }
 }
 
@@ -819,8 +831,10 @@ function ensureTabs_() {
     sh.getRange(1, 1, 1, SIGNUP_COLUMNS.length).setValues([labels_(SIGNUP_COLUMNS)]).setFontWeight('bold');
     sh.setFrozenRows(1);
   }
+  let change = '';
   if (!ss.getSheetByName(SCHEDULE_TAB)) {
-    if (!migrateNights_(ss)) {
+    change = migrateNights_(ss) ? 'migrated' : 'created';
+    if (change === 'created') {
       const sc = ss.insertSheet(SCHEDULE_TAB);
       sc.getRange('A:A').setNumberFormat('@');
       sc.getRange('C:C').setNumberFormat('@');
@@ -828,6 +842,10 @@ function ensureTabs_() {
     }
     styleSchedule_(ss.getSheetByName(SCHEDULE_TAB));
   }
+  // An older deployment that's still live re-creates an empty Nights tab. The Schedule replaced it.
+  const stray = ss.getSheetByName(LEGACY_NIGHTS_TAB);
+  if (stray && stray.getLastRow() <= 1) ss.deleteSheet(stray);
+  return change;
 }
 
 /** Earlier versions had a "Nights" tab (Night, Dungeon, Message). It becomes the Schedule. */

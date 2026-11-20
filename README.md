@@ -125,8 +125,10 @@ for "any". Nobody can edit that row from the board, only from the Sheet.
 
 **Updating the script.** When `Code.gs` changes, in Apps Script:
 1. Replace the code with the new `Code.gs` and save.
-2. Run **setup** once. It restyles the tabs and builds the Overview; your sign-ups stay as they are.
-   (Coming from an older version, it also turns the Nights tab into the Schedule, keeping your notes.)
+2. Run **setup** once: in the editor, or in the Sheet with **Sign-up board → Tidy up the tabs**.
+   It restyles the tabs and builds the Overview; your sign-ups stay as they are. Coming from an
+   older version, it also turns the Nights tab into the Schedule, keeping your notes. (Simply
+   reopening the Sheet does that part too.)
 3. **Deploy → Manage deployments → Edit (pencil) → Version: New version → Deploy**.
    The URL stays the same. Without a new version, the board keeps using the old script.
 
