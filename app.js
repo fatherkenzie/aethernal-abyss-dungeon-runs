@@ -1117,6 +1117,11 @@
     }).join(', ');
   }
 
+  /** The sheet stores dungeon names so people can read it; the ids stay for older sheet scripts. */
+  function withNames(data) {
+    return Object.assign({}, data, { dungeonNames: data.dungeons.map(function (id) { return dungeonById(id).name; }) });
+  }
+
   async function submitSheet() {
     if (sheetState.busy) return;
     const data = readForm();
@@ -1126,7 +1131,7 @@
     try {
       if (sheetState.mode === 'signup') {
         const dates = Array.from(sheetState.nights).sort();
-        const res = await api.write('signup', Object.assign({ dates: dates }, data), loadRange());
+        const res = await api.write('signup', Object.assign({ dates: dates }, withNames(data)), loadRange());
         apply(res);
         const created = (res.result && res.result.created) || [];
         const skipped = (res.result && res.result.skipped) || [];
@@ -1144,7 +1149,7 @@
         if (skipped.length) msg += ' Skipped ' + skippedText(skipped, data) + '.';
         toast(msg);
       } else {
-        apply(await api.write('update', Object.assign({ id: sheetState.id }, data), loadRange()));
+        apply(await api.write('update', Object.assign({ id: sheetState.id }, withNames(data)), loadRange()));
         store.set('profile', { name: data.name, class: data.class, spec: data.spec, dungeons: data.dungeons });
         closeSheet();
         toast('Changes saved.');

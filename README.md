@@ -24,7 +24,7 @@ sign-ups that are saved only in your own browser.
 4. In the toolbar, pick the function **setup** and press **Run**.
    Google asks for permission the first time: **Review permissions** → choose your account →
    **Advanced** → **Go to … (unsafe)** → **Allow**. ("Unsafe" only means Google hasn't reviewed
-   your own script.) This creates the **Signups** and **Nights** tabs.
+   your own script.) This creates the **Overview**, **Signups**, **Nights** and **Archive** tabs.
 5. Click **Deploy → New deployment**. Click the gear next to "Select type" and choose **Web app**.
    - Execute as: **Me**
    - Who has access: **Anyone**
@@ -47,27 +47,36 @@ starts with `{"ok":true`.
 
 ---
 
-## Running it
+## The Sheet
 
-**Fix or remove anyone's sign-up.** Edit or delete their row in the **Signups** tab.
-The board picks it up on the next refresh (within 45 seconds, or right away with the refresh button).
+| Tab | What it's for |
+|---|---|
+| **Overview** | Reading. Upcoming nights, this week and next, laid out like the board: a band per week, a heading per night (time, headcount, top pick, your note), then each group with its tank, healer and DPS. Don't edit it: it's redrawn after every sign-up, after every change you make in Signups or Nights, and whenever the Sheet is opened. |
+| **Signups** | The data, one row per character per night. Fix, edit or delete rows here. Technical columns (ID, timestamps, device) are hidden, Class and Role have dropdowns, and the header has a filter. |
+| **Nights** | Your notes per night (see below). |
+| **Archive** | Past weeks. Every Monday, last week's sign-ups move here on their own, so Signups stays short. |
 
-**Lock in a dungeon or post a note.** Add a row to the **Nights** tab:
+The **Sign-up board** menu (next to Help) has **Refresh overview**, in case it ever looks out of
+date, and **Tidy up the tabs**, which reapplies the layout if something got messed up.
 
-| date       | dungeon     | message                      |
+**Fix or remove anyone's sign-up.** Edit or delete their row in **Signups**. The board picks it up
+on its next refresh (within 45 seconds, or right away with the refresh button).
+
+**Lock in a dungeon or post a note.** Add a row to **Nights**:
+
+| Night      | Dungeon     | Message                      |
 |------------|-------------|------------------------------|
 | 2026-11-26 |             | Guild raid first, run after. |
 | 2026-11-27 | Scholomance | Bring your keys              |
 
-- `date` can be `2026-11-27` or `27.11.2026`.
-- `dungeon` overrides the preferences. Use the name as it appears on the board.
-- `message` appears at the top of that night's details.
+- `Night` can be `2026-11-27` or `27.11.2026`.
+- `Dungeon` overrides the preferences. Use the name as it appears on the board.
+- `Message` appears at the top of that night, on the board and in the Overview.
 - Nothing here closes a night: every upcoming night stays open for sign-ups.
 
-**Add someone by hand.** Type a row into **Signups** with at least `date`, `name`, `class` and `spec`
-(and `role`: tank, healer, melee or ranged). `dungeons` takes names separated by commas, such as
-`Scholomance, BRD`, or stays empty for "any". Leave `id` and `owner` empty. Nobody can edit that row
-from the board, only from the Sheet.
+**Add someone by hand.** Type a row into **Signups** with Night, Character, Class, Spec and Role.
+Dungeons takes names separated by commas, such as `Scholomance, Blackrock Depths`, or stays empty
+for "any". Nobody can edit that row from the board, only from the Sheet.
 
 ### How the board behaves
 
@@ -93,20 +102,24 @@ from the board, only from the Sheet.
 | What | Where |
 |---|---|
 | Title and tagline | `config.js` |
-| Dungeon list | `config.js` → `dungeons`. Keep existing `id`s, the Sheet stores them. |
+| Dungeon list | `config.js` → `dungeons`. The Sheet stores the names, so rename a dungeon only when nobody has an upcoming sign-up for it. |
 | Classes, specs, colours | `config.js` → `classes` |
-| Party size | `config.js` → `party` |
-| Start time, run days, time zone | `apps-script/Code.gs` → `SETTINGS` (and the same values in `config.js`) |
+| Party size | `config.js` → `party` (and `SETTINGS.party` in `Code.gs`, for the Overview) |
+| Start time, run days, time zone, Overview title | `apps-script/Code.gs` → `SETTINGS` (and the same values in `config.js`) |
 
-**After editing `Code.gs` in Apps Script**, publish it again or nothing changes:
-**Deploy → Manage deployments → Edit (pencil) → Version: New version → Deploy**.
-The URL stays the same.
+**Updating the script.** When `Code.gs` changes, in Apps Script:
+1. Replace the code with the new `Code.gs` and save.
+2. Run **setup** once. It restyles the tabs and builds the Overview; your sign-ups stay as they are.
+3. **Deploy → Manage deployments → Edit (pencil) → Version: New version → Deploy**.
+   The URL stays the same. Without a new version, the board keeps using the old script.
 
 ## If something's wrong
 
 - **"Can't reach the guild sheet."** Check that `apiUrl` ends in `/exec`, that the deployment is a
   **Web app** with access set to **Anyone**, and that the `?action=list` check above works.
 - **A change to `Code.gs` doesn't show up.** Make a new version (see above).
+- **The Overview looks out of date.** Use **Sign-up board → Refresh overview**. If the menu is
+  missing, reload the Sheet: it's added when the Sheet opens.
 - **Anyone with the link can sign up**, the same as with a Discord post. If someone spams it,
   delete the rows in the Sheet. To start over with a fresh link, make a new deployment and
   update `config.js`.
