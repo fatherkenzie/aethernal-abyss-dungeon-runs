@@ -28,6 +28,7 @@
 
   /* palette, taken from the background art: violet dusk, indigo forest, an arcane river */
   --night: #0a0a18;                     /* the page, behind the art */
+  --art-dim: rgba(4, 8, 24, 0.18);      /* black-blue veil over the art, so it stays in the background */
   --glass: rgba(20, 19, 44, 0.66);      /* frosted panels over the art */
   --raised: rgba(120, 140, 255, 0.07);  /* hover */
   --well: rgba(6, 6, 18, 0.5);          /* date boxes, inputs, empty slots */
@@ -93,9 +94,10 @@ body::before {
   height: 100lvh;
   pointer-events: none;
   background:
+    linear-gradient(var(--art-dim), var(--art-dim)),
     linear-gradient(180deg, rgba(8, 7, 22, 0.62) 0%, rgba(8, 7, 22, 0.24) 24%, rgba(8, 7, 22, 0.36) 46%,
       rgba(7, 7, 19, 0.62) 70%, rgba(6, 6, 16, 0.86) 100%),
-    url("img/abyss-wide.webp") 62% 50% / cover no-repeat,
+    url("img/abyss-wide.webp?v=2") 62% 50% / cover no-repeat,
     url("data:image/webp;base64,UklGRqQAAABXRUJQVlA4IJgAAACwBACdASooABEAPsFUo0ynpKMiMBVYAPAYCWMAyJgHzpK8UTvwDl3cn1jWX9oAAPz0w3aNZznoTPsJfm1GGbLnTdYcKh3jYVMVVFWLmvGgWdtlieqr/xIwgjz8empI9sms9xL3vAEtlksDlpgV4n9mundg8QbxVuJrHgG+tfc76k+t9nfu0lf/B9jz1iro2jmmoa3ijooAAA==") 62% 50% / cover no-repeat,
     var(--night);
 }
@@ -104,9 +106,10 @@ body::before {
 @media (orientation: portrait) {
   body::before {
     background:
+      linear-gradient(var(--art-dim), var(--art-dim)),
       linear-gradient(180deg, rgba(8, 7, 22, 0.62) 0%, rgba(8, 7, 22, 0.24) 24%, rgba(8, 7, 22, 0.36) 46%,
         rgba(7, 7, 19, 0.62) 70%, rgba(6, 6, 16, 0.86) 100%),
-      url("img/abyss-tall.webp") 50% 50% / cover no-repeat,
+      url("img/abyss-tall.webp?v=2") 50% 50% / cover no-repeat,
       url("data:image/webp;base64,UklGRpYAAABXRUJQVlA4IIoAAABwBACdASoSABgAPsFOoEqnpCMhsBgMAPAYCWQAtsgQvI4xeiOI5AKAbRzsQAD+9Ccg56GA1EBD0mP+LJkOtzN7rSqnJdyekXgr7tYnW0lMK/toiU8hMONy4QXRnoNw54eXF/YyG2zhevU11/o9oYsW5UV45keYlE9nXrkevEnVo9ke8uAgicAAAAA=") 50% 50% / cover no-repeat,
       var(--night);
   }
