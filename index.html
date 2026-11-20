@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Explore the Abyss sign-ups</title>
+  <meta name="description" content="Sign up for the guild's daily endgame dungeon runs, Monday to Friday at 21:00.">
+  <meta property="og:title" content="Explore the Abyss sign-ups">
+  <meta property="og:description" content="Daily endgame dungeon runs, Monday to Friday at 21:00. Pick your nights and the dungeons you'd like to run.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#120d09">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='4' fill='%23120d09'/%3E%3Cpath d='M12 3.5l6.5 2.4v5c0 4.1-2.7 7.7-6.5 9.1-3.8-1.4-6.5-5-6.5-9.1v-5z' fill='none' stroke='%23e2b65a' stroke-width='1.8'/%3E%3C/svg%3E">
+  <link rel="preload" href="fonts/marcellus-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/alegreya-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="i-tank" viewBox="0 0 24 24"><path d="M12 2.8l7.2 2.7v5.6c0 4.6-3 8.6-7.2 10.1-4.2-1.5-7.2-5.5-7.2-10.1V5.5z"/><path d="M12 6.4v11.2" opacity=".5"/></symbol>
+    <symbol id="i-healer" viewBox="0 0 24 24"><path d="M9.6 3.6h4.8v6h6v4.8h-6v6H9.6v-6h-6V9.6h6z"/></symbol>
+    <symbol id="i-melee" viewBox="0 0 24 24"><path d="M20.6 3.4l-.7 3.9-9.2 9.2-3.2-3.2 9.2-9.2z"/><path d="M5.4 12.3l6.3 6.3M8.6 15.4l-4.6 4.6"/></symbol>
+    <symbol id="i-ranged" viewBox="0 0 24 24"><path d="M8.6 3.4c7.2 2.4 7.2 14.8 0 17.2"/><path d="M8.6 3.4v17.2" opacity=".55"/><path d="M4 12h16.4M20.4 12l-3.1-2.6M20.4 12l-3.1 2.6"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.4V12l3 2"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5.5" y="10.5" width="13" height="9.6" rx="1.4"/><path d="M8.6 10.5V8.1a3.4 3.4 0 0 1 6.8 0v2.4"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.6l4.2 4.2L19 7"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19.4 12a7.4 7.4 0 1 1-2.2-5.3"/><path d="M19.7 4.4v4h-4"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5.6 21V3.8"/><path d="M5.6 4.4h11.2l-2.3 3.7 2.3 3.7H5.6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></symbol>
+    <symbol id="i-quill" viewBox="0 0 24 24"><path d="M4 20l1.2-4.4L15.8 5a2.1 2.1 0 0 1 3 3L8.2 18.6z"/><path d="M13.8 7l3 3"/></symbol>
+  </svg>
+
+  <div class="page">
+    <header class="masthead">
+      <div class="masthead-text">
+        <h1 class="title" id="title">Explore the Abyss</h1>
+        <p class="tagline" id="tagline">Daily endgame dungeon runs, Monday to Friday at 21:00 server time.</p>
+      </div>
+      <div class="toolbar">
+        <div class="weeks" id="weeks" role="group" aria-label="Choose a week"></div>
+        <button class="icon-btn" id="refresh" type="button" aria-label="Refresh sign-ups" title="Refresh">
+          <svg class="ico"><use href="#i-refresh"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="board" id="board" aria-busy="true">
+      <noscript><p class="board-message">This board needs JavaScript to show sign-ups.</p></noscript>
+    </main>
+
+    <footer class="footer" id="footer"></footer>
+  </div>
+
+  <dialog class="sheet" id="sheet" aria-labelledby="sheet-title">
+    <form class="sheet-form" id="sheet-form" novalidate>
+      <div class="sheet-head">
+        <div>
+          <h2 class="sheet-title" id="sheet-title">Sign up</h2>
+          <p class="sheet-sub" id="sheet-sub"></p>
+        </div>
+        <button class="icon-btn" type="button" data-close aria-label="Close">
+          <svg class="ico"><use href="#i-close"/></svg>
+        </button>
+      </div>
+
+      <div class="sheet-body">
+        <div class="field">
+          <label class="field-label" for="f-name">Character name</label>
+          <input class="input" id="f-name" name="name" maxlength="24" autocomplete="off" autocapitalize="words" spellcheck="false" required>
+          <p class="field-error" id="e-name" hidden></p>
+        </div>
+
+        <fieldset class="field">
+          <legend class="field-label">Class</legend>
+          <div class="class-grid" id="f-class"></div>
+          <p class="field-error" id="e-class" hidden></p>
+        </fieldset>
+
+        <fieldset class="field" id="spec-field" hidden>
+          <legend class="field-label">Spec</legend>
+          <div class="spec-grid" id="f-spec"></div>
+          <p class="field-error" id="e-spec" hidden></p>
+        </fieldset>
+
+        <fieldset class="field" id="nights-field">
+          <legend class="field-label">Nights</legend>
+          <div id="f-nights"></div>
+          <p class="field-error" id="e-nights" hidden></p>
+        </fieldset>
+
+        <fieldset class="field" aria-describedby="h-dungeons">
+          <legend class="field-label">Dungeon preference</legend>
+          <p class="field-hint" id="h-dungeons">Pick as many as you like. Leave it empty if any dungeon is fine.</p>
+          <div class="dungeon-grid" id="f-dungeons"></div>
+        </fieldset>
+
+        <div class="field">
+          <label class="field-label" for="f-note">Note <span class="optional">(optional)</span></label>
+          <input class="input" id="f-note" maxlength="80" autocomplete="off" placeholder="e.g. Can stay about an hour">
+          <p class="counter" id="c-note" aria-live="polite">0 / 80</p>
+        </div>
+      </div>
+
+      <div class="sheet-foot" id="sheet-foot"></div>
+    </form>
+  </dialog>
+
+  <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
