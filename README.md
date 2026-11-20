@@ -5,7 +5,7 @@ Each night shows how many people are going and the dungeon most of them prefer. 
 its groups (tank, healer, 3 DPS each) and sign up. Officers can move any run to another day or
 time from the Google Sheet, and the board follows.
 
-- **The site** (`index.html`, `styles.css`, `app.js`, `config.js`, `fonts/`) runs on GitHub Pages.
+- **The site** (`index.html`, `styles.css`, `app.js`, `config.js`, `fonts/`, `img/`) runs on GitHub Pages.
 - **The sign-ups** live in a Google Sheet you own. A small script (`apps-script/Code.gs`) inside the
   Sheet saves and reads them, so nobody needs an account or a login.
 
@@ -118,6 +118,8 @@ for "any". Nobody can edit that row from the board, only from the Sheet.
 | What | Where |
 |---|---|
 | Title and tagline | `config.js` |
+| Background art | `img/abyss-wide.webp` for landscape screens and `img/abyss-tall.webp` for phones (a crop centred on the giant). Replace them with files of the same names, or change the paths in `styles.css` (`body::before`). |
+| Colours | `styles.css` → `:root`: the glass, the arcane blue for everything you can press, ember for notices, mint for "you're in" |
 | Dungeon list | `config.js` → `dungeons`. The Sheet stores the names, so rename a dungeon only when nobody has an upcoming sign-up for it. |
 | Classes, specs, colours | `config.js` → `classes` |
 | Party size | `config.js` → `party` (and `SETTINGS.party` in `Code.gs`, for the Overview) |
@@ -144,4 +146,5 @@ for "any". Nobody can edit that row from the board, only from the Sheet.
   update `config.js`.
 
 The fonts are Marcellus and Alegreya Sans, both under the SIL Open Font License (see `fonts/`).
-They're served from your own site, so the board makes no calls to Google Fonts.
+They're served from your own site, like the background art, so the board makes no calls to Google
+Fonts or anywhere else.

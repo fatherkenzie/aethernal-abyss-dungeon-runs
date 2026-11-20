@@ -26,23 +26,24 @@
 :root {
   color-scheme: dark;
 
-  /* palette */
-  --abyss: #120d09;      /* page */
-  --leather-hi: #2e2216; /* selected */
-  --leather-lo: #19120b; /* wells */
-  --socket: #0d0906;     /* inputs, empty slots */
-  --rule: #3a2b1a;       /* dividers */
-  --trim: #6b5127;       /* bronze borders */
-  --trim-soft: #4a3820;
-  --gold: #e2b65a;
-  --gold-hi: #f6d98f;
-  --quest: #ffd100;      /* quest-title yellow */
-  --ink: #ecdfc4;        /* parchment text */
-  --ink-2: #b6a283;
-  --ink-3: #94816a;
-  --fel: #93d16a;
-  --amber: #f0a53a;
-  --danger: #f07158;
+  /* palette, taken from the background art: violet dusk, indigo forest, an arcane river */
+  --night: #0a0a18;                     /* the page, behind the art */
+  --glass: rgba(20, 19, 44, 0.66);      /* frosted panels over the art */
+  --raised: rgba(120, 140, 255, 0.07);  /* hover */
+  --well: rgba(6, 6, 18, 0.5);          /* date boxes, inputs, empty slots */
+  --edge: rgba(178, 170, 255, 0.2);     /* glass borders */
+  --edge-strong: rgba(178, 170, 255, 0.36);
+  --rule: rgba(178, 170, 255, 0.12);    /* dividers inside the glass */
+  --arcane: #5782de;                    /* the river: everything you can press */
+  --arcane-hi: #8fb2ff;                 /* the same as text, hover and focus */
+  --arcane-glow: rgba(87, 130, 222, 0.5);
+  --ember: #f0a993;                     /* the skull's warm edge: notices and changes */
+  --ok: #7fdcbf;                        /* you're in, ready, synced */
+  --danger: #ff8d8d;
+  --title: #f3f0ff;
+  --ink: #e9e6fb;
+  --ink-2: #bdb6dc;
+  --ink-3: #9f98c3;
 
   /* type: the only five text styles on the board */
   --serif: "Marcellus", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
@@ -63,6 +64,7 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  background: var(--night);
 }
 
 html.has-sheet {
@@ -74,11 +76,40 @@ body {
   min-height: 100vh;
   color: var(--ink);
   font: var(--f-body);
-  background-color: var(--abyss);
-  background-image:
-    radial-gradient(120% 55% at 50% -12%, rgba(132, 78, 28, 0.32), transparent 62%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .42 0 0 0 0 .27 0 0 0 .1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   -webkit-font-smoothing: antialiased;
+}
+
+/* The scene stays put while the page scrolls over it. It's darkened at the top, for the title over the
+   bright sky, and towards the bottom, where the footer sits. The tiny inline copy shows while the
+   full picture loads. */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100vh;
+  height: 100lvh;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(8, 7, 22, 0.62) 0%, rgba(8, 7, 22, 0.24) 24%, rgba(8, 7, 22, 0.36) 46%,
+      rgba(7, 7, 19, 0.62) 70%, rgba(6, 6, 16, 0.86) 100%),
+    url("img/abyss-wide.webp") 62% 50% / cover no-repeat,
+    url("data:image/webp;base64,UklGRqQAAABXRUJQVlA4IJgAAACwBACdASooABEAPsFUo0ynpKMiMBVYAPAYCWMAyJgHzpK8UTvwDl3cn1jWX9oAAPz0w3aNZznoTPsJfm1GGbLnTdYcKh3jYVMVVFWLmvGgWdtlieqr/xIwgjz8empI9sms9xL3vAEtlksDlpgV4n9mundg8QbxVuJrHgG+tfc76k+t9nfu0lf/B9jz1iro2jmmoa3ijooAAA==") 62% 50% / cover no-repeat,
+    var(--night);
+}
+
+/* phones and portrait tablets get a tall crop, centred on the giant */
+@media (orientation: portrait) {
+  body::before {
+    background:
+      linear-gradient(180deg, rgba(8, 7, 22, 0.62) 0%, rgba(8, 7, 22, 0.24) 24%, rgba(8, 7, 22, 0.36) 46%,
+        rgba(7, 7, 19, 0.62) 70%, rgba(6, 6, 16, 0.86) 100%),
+      url("img/abyss-tall.webp") 50% 50% / cover no-repeat,
+      url("data:image/webp;base64,UklGRpYAAABXRUJQVlA4IIoAAABwBACdASoSABgAPsFOoEqnpCMhsBgMAPAYCWQAtsgQvI4xeiOI5AKAbRzsQAD+9Ccg56GA1EBD0mP+LJkOtzN7rSqnJdyekXgr7tYnW0lMK/toiU8hMONy4QXRnoNw54eXF/YyG2zhevU11/o9oYsW5UV45keYlE9nXrkevEnVo9ke8uAgicAAAAA=") 50% 50% / cover no-repeat,
+      var(--night);
+  }
 }
 
 button,
@@ -95,7 +126,7 @@ h3 {
 }
 
 :focus-visible {
-  outline: 2px solid var(--gold-hi);
+  outline: 2px solid var(--arcane-hi);
   outline-offset: 2px;
 }
 
@@ -138,17 +169,19 @@ h3 {
 .title {
   font: var(--f-display);
   letter-spacing: 0.005em;
-  background: linear-gradient(180deg, #fff2c9 0%, #f2cf7a 36%, #c98e35 70%, #8c5b1d 100%);
+  /* moonlight fading into the river's blue */
+  background: linear-gradient(180deg, #ffffff 0%, #ebe6ff 38%, #b9aef0 70%, #8a9ff0 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.85)) drop-shadow(0 0 22px rgba(226, 150, 60, 0.16));
+  filter: drop-shadow(0 2px 1px rgba(4, 4, 14, 0.85)) drop-shadow(0 0 28px rgba(87, 130, 222, 0.4));
 }
 
 .tagline {
   margin-top: 10px;
   max-width: 46ch;
-  color: var(--ink-2);
+  color: #d8d2f2;
+  text-shadow: 0 1px 2px rgba(4, 4, 14, 0.9), 0 0 16px rgba(4, 4, 14, 0.7);
 }
 
 .toolbar {
@@ -162,10 +195,12 @@ h3 {
   flex: 1;
   gap: 3px;
   padding: 3px;
-  border: 1px solid var(--trim);
-  border-radius: 4px;
-  background: var(--leather-lo);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(16px) saturate(150%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 12px 30px -16px rgba(2, 2, 10, 0.9);
 }
 
 .week-btn {
@@ -174,7 +209,7 @@ h3 {
   min-height: 50px;
   padding: 6px 14px;
   border: 0;
-  border-radius: 2px;
+  border-radius: 9px;
   background: transparent;
   color: var(--ink-2);
   text-align: left;
@@ -182,7 +217,7 @@ h3 {
 }
 
 .week-btn:hover {
-  background: rgba(255, 235, 190, 0.04);
+  background: var(--raised);
 }
 
 .week-name {
@@ -195,12 +230,13 @@ h3 {
 }
 
 .week-btn[aria-pressed="true"] {
-  background: linear-gradient(180deg, #3b2b19, #2a1e12);
-  box-shadow: inset 0 0 0 1px var(--trim), inset 0 1px 0 rgba(246, 217, 143, 0.16);
+  background: linear-gradient(180deg, rgba(87, 130, 222, 0.34), rgba(87, 130, 222, 0.16));
+  box-shadow: inset 0 0 0 1px rgba(143, 178, 255, 0.55), 0 0 18px -4px var(--arcane-glow);
+  color: #d9e3ff;
 }
 
 .week-btn[aria-pressed="true"] .week-name {
-  color: var(--quest);
+  color: #ffffff;
 }
 
 .icon-btn {
@@ -209,16 +245,19 @@ h3 {
   width: 50px;
   min-height: 50px;
   padding: 0;
-  border: 1px solid var(--trim);
-  border-radius: 4px;
-  background: var(--leather-lo);
-  color: var(--gold);
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(16px) saturate(150%);
+  color: var(--arcane-hi);
   cursor: pointer;
 }
 
 .icon-btn:hover {
-  color: var(--gold-hi);
-  background: #21180f;
+  border-color: var(--edge-strong);
+  background: rgba(40, 38, 84, 0.72);
+  color: #ffffff;
 }
 
 .icon-btn .ico {
@@ -240,34 +279,30 @@ h3 {
 /* The board frame                                                      */
 /* ------------------------------------------------------------------ */
 
+/* Frosted glass over the art: the scene glows through, blurred, while the text stays on a deep tint. */
 .board {
   position: relative;
-  border: 1px solid var(--trim);
-  border-radius: 4px;
-  background: linear-gradient(180deg, #271b11 0%, #1c140d 70%);
+  overflow: hidden;
+  border: 1px solid var(--edge);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(26, 24, 56, 0.6) 0%, rgba(16, 15, 36, 0.74) 320px, rgba(14, 13, 32, 0.8) 100%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(22px) saturate(160%);
   box-shadow:
-    inset 0 0 0 1px #0a0705,
-    inset 0 0 0 2px rgba(226, 182, 90, 0.09),
-    0 26px 50px -26px rgba(0, 0, 0, 0.95);
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 30px 70px -30px rgba(2, 2, 10, 0.95);
 }
 
-/* gold corner brackets, like an in-game frame */
+/* light catching the top edge of the glass */
 .board::before {
   content: "";
   position: absolute;
-  inset: -1px;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
   pointer-events: none;
-  border-radius: 4px;
-  background:
-    linear-gradient(var(--gold), var(--gold)) top left / 16px 2px no-repeat,
-    linear-gradient(var(--gold), var(--gold)) top left / 2px 16px no-repeat,
-    linear-gradient(var(--gold), var(--gold)) top right / 16px 2px no-repeat,
-    linear-gradient(var(--gold), var(--gold)) top right / 2px 16px no-repeat,
-    linear-gradient(var(--gold), var(--gold)) bottom left / 16px 2px no-repeat,
-    linear-gradient(var(--gold), var(--gold)) bottom left / 2px 16px no-repeat,
-    linear-gradient(var(--gold), var(--gold)) bottom right / 16px 2px no-repeat,
-    linear-gradient(var(--gold), var(--gold)) bottom right / 2px 16px no-repeat;
-  opacity: 0.85;
+  background: linear-gradient(90deg, transparent, rgba(205, 198, 255, 0.55), transparent);
 }
 
 .board-error {
@@ -322,7 +357,12 @@ h3 {
 }
 
 .night-head:hover {
-  background-color: rgba(255, 235, 190, 0.025);
+  background-color: var(--raised);
+}
+
+/* the board clips its corners, so the focus ring sits inside the row */
+.night-head:focus-visible {
+  outline-offset: -3px;
 }
 
 .date {
@@ -332,10 +372,10 @@ h3 {
   min-width: 54px;
   margin-right: 14px;
   padding: 5px 6px 6px;
-  border: 1px solid var(--trim-soft);
-  border-radius: 3px;
-  background: var(--socket);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7);
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--well);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
 .dow {
@@ -360,7 +400,7 @@ h3 {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   font: var(--f-heading);
-  color: var(--quest);
+  color: var(--title);
 }
 
 .pick-name .ico {
@@ -368,7 +408,7 @@ h3 {
   height: 15px;
   margin-right: 6px;
   vertical-align: -1px;
-  color: var(--gold);
+  color: var(--ember);
 }
 
 .pick-name.is-empty {
@@ -379,8 +419,8 @@ h3 {
   justify-self: start;
   width: 9em;
   max-width: 100%;
-  border-radius: 3px;
-  background: #2f2318;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.07);
   color: transparent;
 }
 
@@ -443,7 +483,7 @@ h3 {
   align-items: center;
   gap: 5px;
   font: var(--f-small);
-  color: var(--fel);
+  color: var(--ok);
 }
 
 .flag .ico {
@@ -454,7 +494,7 @@ h3 {
 /* an officer moved the run or changed its start time */
 .flag.is-change {
   align-items: flex-start;
-  color: var(--gold);
+  color: var(--ember);
 }
 
 .flag.is-change .ico {
@@ -464,22 +504,22 @@ h3 {
 
 /* today and selection */
 .night.is-today .date {
-  border-color: var(--gold);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7), 0 0 14px rgba(255, 190, 60, 0.22);
+  border-color: var(--arcane-hi);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.45), 0 0 16px rgba(87, 130, 222, 0.5);
 }
 
 .night.is-today .dom,
 .night.is-today .dow,
 .night.is-today.is-open .when {
-  color: var(--quest);
+  color: var(--arcane-hi);
 }
 
 .night.is-selected {
-  background: linear-gradient(180deg, rgba(255, 209, 0, 0.04), rgba(255, 209, 0, 0) 160px), var(--leather-hi);
+  background: linear-gradient(180deg, rgba(87, 130, 222, 0.16), rgba(87, 130, 222, 0.03) 160px);
 }
 
 .night.is-done .night-head {
-  opacity: 0.66;
+  opacity: 0.74;
 }
 
 .night.is-done .pick-name {
@@ -495,11 +535,11 @@ h3 {
   place-items: center;
   width: 28px;
   height: 28px;
-  border: 1px solid #47361e;
-  border-radius: 3px;
-  background: linear-gradient(180deg, #0b0806, #18110b);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.85);
-  color: #6a5739;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  background: var(--well);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+  color: rgba(178, 170, 255, 0.5);
 }
 
 .slot .ico {
@@ -510,8 +550,8 @@ h3 {
 
 .slot.is-filled {
   border-color: var(--c);
-  color: #fff7e6;
-  background: radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--c) 58%, #120d09) 0%, color-mix(in srgb, var(--c) 20%, #0b0806) 78%);
+  color: #ffffff;
+  background: radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--c) 58%, #14122c) 0%, color-mix(in srgb, var(--c) 20%, #0a0a1a) 78%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.2),
     inset 0 -2px 4px rgba(0, 0, 0, 0.5),
@@ -534,7 +574,7 @@ h3 {
 
 .panel-title {
   font: var(--f-heading);
-  color: var(--quest);
+  color: var(--title);
 }
 
 /* on phones the day is already named by the row above; keep the heading for screen readers */
@@ -558,15 +598,16 @@ h3 {
   display: flex;
   gap: 10px;
   padding: 10px 12px;
-  border-left: 2px solid var(--gold);
-  background: rgba(226, 182, 90, 0.08);
+  border-left: 2px solid var(--ember);
+  border-radius: 0 8px 8px 0;
+  background: rgba(240, 169, 147, 0.1);
 }
 
 .notice .ico {
   width: 18px;
   height: 18px;
   margin-top: 3px;
-  color: var(--gold);
+  color: var(--ember);
 }
 
 .panel-grid {
@@ -580,15 +621,18 @@ h3 {
   gap: 14px;
   align-content: start;
   padding: 16px;
-  border: 1px solid rgba(226, 182, 90, 0.5);
-  border-radius: 4px;
-  background: linear-gradient(180deg, rgba(255, 209, 0, 0.1), rgba(226, 182, 90, 0.04));
-  box-shadow: inset 0 1px 0 rgba(246, 217, 143, 0.14), 0 12px 26px -18px rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(143, 178, 255, 0.45);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(87, 130, 222, 0.2), rgba(87, 130, 222, 0.07));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 32px -12px rgba(87, 130, 222, 0.55),
+    0 14px 30px -20px rgba(0, 0, 0, 0.9);
 }
 
 .card.is-quiet {
   border-color: var(--rule);
-  background: rgba(255, 235, 190, 0.03);
+  background: rgba(255, 255, 255, 0.03);
   box-shadow: none;
 }
 
@@ -602,11 +646,11 @@ h3 {
   width: 18px;
   height: 18px;
   margin-top: 3px;
-  color: var(--gold);
+  color: var(--arcane-hi);
 }
 
 .card-line.is-in .ico {
-  color: var(--fel);
+  color: var(--ok);
 }
 
 .card .btn {
@@ -630,8 +674,8 @@ h3 {
   gap: 2px;
   padding: 8px 12px;
   border: 1px solid var(--rule);
-  border-radius: 3px;
-  background: rgba(13, 9, 6, 0.5);
+  border-radius: 8px;
+  background: var(--well);
 }
 
 .mine-who {
@@ -707,11 +751,11 @@ h3 {
 }
 
 .group-needs.is-needs {
-  color: var(--amber);
+  color: var(--ember);
 }
 
 .group-needs.is-ready {
-  color: var(--fel);
+  color: var(--ok);
 }
 
 .roster {
@@ -726,7 +770,7 @@ h3 {
   align-items: center;
   column-gap: 12px;
   padding: 7px 0;
-  border-bottom: 1px solid rgba(58, 43, 26, 0.6);
+  border-bottom: 1px solid var(--rule);
 }
 
 .member:last-child {
@@ -763,10 +807,10 @@ h3 {
 
 .you {
   padding: 0 7px;
-  border: 1px solid rgba(147, 209, 106, 0.6);
+  border: 1px solid rgba(127, 220, 191, 0.55);
   border-radius: 9px;
   font: var(--f-small);
-  color: var(--fel);
+  color: var(--ok);
 }
 
 .member.is-empty .member-main {
@@ -789,7 +833,7 @@ h3 {
   min-height: 44px;
   padding: 7px 6px 7px 0;
   border: 0;
-  border-radius: 3px;
+  border-radius: 8px;
   background: transparent;
   color: var(--ink-3);
   text-align: left;
@@ -801,19 +845,19 @@ h3 {
 }
 
 .slot-btn:hover {
-  background: rgba(255, 235, 190, 0.04);
+  background: var(--raised);
   color: var(--ink);
 }
 
 .slot-btn:hover .slot {
-  border-color: var(--gold);
-  color: var(--gold);
+  border-color: var(--arcane-hi);
+  color: var(--arcane-hi);
 }
 
 .slot-plus {
   width: 18px;
   height: 18px;
-  color: var(--gold);
+  color: var(--arcane-hi);
 }
 
 /* dungeon preference */
@@ -855,22 +899,23 @@ h3 {
   overflow: hidden;
   border: 1px solid var(--rule);
   border-radius: 3px;
-  background: var(--socket);
+  background: var(--well);
 }
 
 .tally-bar > span {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, #7d5520, var(--gold));
+  background: linear-gradient(90deg, #2c4496, var(--arcane));
 }
 
 .tally li.is-lead .tally-name,
 .tally li.is-lead .tally-n {
-  color: var(--quest);
+  color: var(--arcane-hi);
 }
 
+/* the leading dungeon glows like the river */
 .tally li.is-lead .tally-bar > span {
-  background: linear-gradient(90deg, #a77a00, var(--quest));
+  background: linear-gradient(90deg, var(--arcane), #b4ccff);
 }
 
 .prefs-note {
@@ -884,12 +929,12 @@ h3 {
   width: 15px;
   height: 15px;
   margin-top: 2px;
-  color: var(--gold);
+  color: var(--ember);
 }
 
 .prefs-note b {
   font-weight: inherit;
-  color: var(--quest);
+  color: var(--title);
 }
 
 /* ------------------------------------------------------------------ */
@@ -903,7 +948,7 @@ h3 {
   gap: 8px;
   min-height: 48px;
   padding: 10px 20px;
-  border-radius: 4px;
+  border-radius: 10px;
   font: var(--f-label);
   text-align: center;
   cursor: pointer;
@@ -913,40 +958,45 @@ h3 {
   cursor: progress;
 }
 
-/* the red-and-gold in-game button */
+/* the arcane button: lit from within, like the river */
 .btn-primary {
-  border: 1px solid #c9a24c;
-  background: linear-gradient(180deg, #a3281b 0%, #7a1a10 55%, #571009 100%);
+  border: 1px solid rgba(170, 196, 255, 0.7);
+  background: linear-gradient(180deg, #527de6 0%, #375bc2 55%, #2c4ba5 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 190, 150, 0.35),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.35),
-    0 2px 8px rgba(0, 0, 0, 0.55);
-  color: #ffe08a;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.85);
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -2px 0 rgba(0, 0, 20, 0.25),
+    0 6px 22px -8px rgba(87, 130, 222, 0.85);
+  color: #ffffff;
+  text-shadow: 0 1px 0 rgba(0, 0, 30, 0.45);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(180deg, #b9331f 0%, #8b2013 55%, #63140b 100%);
+  background: linear-gradient(180deg, #5f8af4 0%, #4066d0 55%, #3152b3 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -2px 0 rgba(0, 0, 20, 0.25),
+    0 8px 28px -8px rgba(110, 150, 255, 0.95);
 }
 
 .btn-primary:active {
   transform: translateY(1px);
-  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.55);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 30, 0.45);
 }
 
 .btn-primary[disabled] {
-  filter: grayscale(0.55) brightness(0.85);
+  filter: saturate(0.5) brightness(0.85);
   transform: none;
 }
 
 .btn-secondary {
-  border: 1px solid var(--trim);
-  background: linear-gradient(180deg, #34271a, #241a11);
+  border: 1px solid rgba(143, 178, 255, 0.45);
+  background: rgba(87, 130, 222, 0.1);
   color: var(--ink);
 }
 
 .btn-secondary:hover {
-  border-color: var(--gold);
+  border-color: var(--arcane-hi);
+  background: rgba(87, 130, 222, 0.18);
 }
 
 .btn-ghost {
@@ -960,13 +1010,13 @@ h3 {
 }
 
 .btn-danger {
-  border: 1px solid #e58a72;
-  background: linear-gradient(180deg, #a92c1d, #761a10);
-  color: #fff3ea;
+  border: 1px solid #ff9f9f;
+  background: linear-gradient(180deg, #c94a55, #a3333e);
+  color: #ffffff;
 }
 
 .btn-danger-ghost {
-  border: 1px solid rgba(240, 113, 88, 0.5);
+  border: 1px solid rgba(255, 141, 141, 0.5);
   background: transparent;
   color: var(--danger);
 }
@@ -990,9 +1040,9 @@ h3 {
   border: 0;
   background: none;
   font: var(--f-small);
-  color: var(--gold);
+  color: var(--arcane-hi);
   text-decoration: underline;
-  text-decoration-color: rgba(226, 182, 90, 0.45);
+  text-decoration-color: rgba(143, 178, 255, 0.45);
   text-underline-offset: 3px;
   cursor: pointer;
 }
@@ -1003,12 +1053,17 @@ h3 {
 }
 
 .link-btn:hover {
-  color: var(--gold-hi);
+  color: #ffffff;
+  text-decoration-color: var(--arcane-hi);
 }
 
 .link-btn.is-danger {
   color: var(--danger);
-  text-decoration-color: rgba(240, 113, 88, 0.45);
+  text-decoration-color: rgba(255, 141, 141, 0.45);
+}
+
+.link-btn.is-danger:hover {
+  color: #ffb3b3;
 }
 
 /* ------------------------------------------------------------------ */
@@ -1020,7 +1075,8 @@ h3 {
   gap: 4px;
   margin: 16px 2px 0;
   font: var(--f-small);
-  color: var(--ink-2);
+  color: #cfc9ea;
+  text-shadow: 0 1px 2px rgba(4, 4, 14, 0.95), 0 0 14px rgba(4, 4, 14, 0.85);
 }
 
 .footer p {
@@ -1033,8 +1089,8 @@ h3 {
   height: 7px;
   margin-right: 8px;
   border-radius: 50%;
-  background: var(--fel);
-  box-shadow: 0 0 6px var(--fel);
+  background: var(--ok);
+  box-shadow: 0 0 8px var(--ok);
   vertical-align: 1px;
 }
 
@@ -1043,7 +1099,7 @@ h3 {
 }
 
 .sync.is-demo {
-  color: var(--amber);
+  color: var(--ember);
 }
 
 .sync .link-btn {
@@ -1066,11 +1122,13 @@ h3 {
 
 .toast {
   padding: 12px 14px;
-  border: 1px solid var(--trim);
-  border-left: 3px solid var(--fel);
-  border-radius: 4px;
-  background: linear-gradient(180deg, #302316, #22180f);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--edge);
+  border-left: 3px solid var(--ok);
+  border-radius: 12px;
+  background: rgba(20, 19, 44, 0.86);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.75);
   pointer-events: auto;
 }
 
@@ -1093,16 +1151,20 @@ h3 {
   max-width: none;
   max-height: min(90dvh, 880px);
   padding: 0;
-  border: 1px solid var(--trim);
-  border-radius: 6px;
-  background: linear-gradient(180deg, #2a1e13, #1b130c 60%);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.75), inset 0 0 0 1px rgba(226, 182, 90, 0.08);
+  border: 1px solid var(--edge);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(28, 26, 60, 0.9), rgba(16, 15, 36, 0.94));
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+  backdrop-filter: blur(26px) saturate(150%);
+  box-shadow: 0 40px 90px -20px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   color: var(--ink);
   overflow: hidden;
 }
 
 .sheet::backdrop {
-  background: rgba(6, 4, 2, 0.74);
+  background: rgba(6, 6, 16, 0.62);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
 }
 
 .sheet[open] {
@@ -1132,11 +1194,17 @@ h3 {
   margin: -6px -6px 0 0;
   border-color: transparent;
   background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.sheet-head .icon-btn:hover {
+  background: var(--raised);
 }
 
 .sheet-title {
   font: var(--f-heading);
-  color: var(--quest);
+  color: var(--title);
 }
 
 .sheet-sub {
@@ -1170,7 +1238,7 @@ h3 {
   gap: 8px 10px;
   padding: 12px 18px calc(14px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--rule);
-  background: #1b130c;
+  background: rgba(10, 10, 26, 0.55);
 }
 
 .sheet-foot .btn-primary {
@@ -1236,21 +1304,25 @@ legend.field-label {
   width: 100%;
   min-height: 48px;
   padding: 11px 12px;
-  border: 1px solid var(--trim-soft);
-  border-radius: 3px;
-  background: var(--socket);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7);
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  background: var(--well);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.45);
   font: var(--f-body);
+}
+
+.input:hover {
+  border-color: var(--edge-strong);
 }
 
 .input:focus {
   outline: none;
-  border-color: var(--gold);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--gold);
+  border-color: var(--arcane-hi);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.45), 0 0 0 3px rgba(87, 130, 222, 0.35);
 }
 
 .input::placeholder {
-  color: #74644d;
+  color: #948dba;
 }
 
 /* choice chips */
@@ -1276,25 +1348,26 @@ legend.field-label {
   height: 100%;
   min-height: 48px;
   padding: 8px 10px;
-  border: 1px solid var(--trim-soft);
-  border-radius: 3px;
-  background: linear-gradient(180deg, #21180f, #18110b);
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
   font: var(--f-label);
 }
 
 .chip:hover .chip-face {
-  border-color: var(--trim);
+  border-color: var(--edge-strong);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .chip input:focus-visible + .chip-face {
-  outline: 2px solid var(--gold-hi);
+  outline: 2px solid var(--arcane-hi);
   outline-offset: 2px;
 }
 
 .chip input:checked + .chip-face {
-  border-color: var(--gold);
-  background: linear-gradient(180deg, #3b2b18, #2a1e12);
-  box-shadow: inset 0 0 0 1px rgba(255, 209, 0, 0.22);
+  border-color: var(--arcane-hi);
+  background: rgba(87, 130, 222, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(143, 178, 255, 0.35), 0 0 16px -6px var(--arcane-glow);
 }
 
 .class-grid {
@@ -1318,8 +1391,8 @@ legend.field-label {
 
 .chip-class input:checked + .chip-face {
   border-color: var(--c);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--c) 20%, #21180f), #1a120c);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--c) 24%, transparent), color-mix(in srgb, var(--c) 8%, transparent));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent), 0 0 16px -6px color-mix(in srgb, var(--c) 60%, transparent);
 }
 
 .spec-grid,
@@ -1332,7 +1405,11 @@ legend.field-label {
 .chip-spec .ico {
   width: 20px;
   height: 20px;
-  color: var(--gold);
+  color: var(--ink-2);
+}
+
+.chip-spec input:checked + .chip-face .ico {
+  color: var(--arcane-hi);
 }
 
 .chip-text {
@@ -1352,9 +1429,9 @@ legend.field-label {
   flex: none;
   width: 18px;
   height: 18px;
-  border: 1px solid var(--trim);
-  border-radius: 3px;
-  background: var(--socket);
+  border: 1px solid var(--edge-strong);
+  border-radius: 5px;
+  background: var(--well);
   color: transparent;
 }
 
@@ -1365,9 +1442,9 @@ legend.field-label {
 }
 
 .chip-dungeon input:checked + .chip-face .box {
-  border-color: var(--quest);
-  background: var(--quest);
-  color: #241a0a;
+  border-color: var(--arcane-hi);
+  background: var(--arcane);
+  color: #ffffff;
 }
 
 .nights-week + .nights-week {
@@ -1401,7 +1478,7 @@ legend.field-label {
 }
 
 .n-note {
-  color: var(--fel);
+  color: var(--ok);
 }
 
 .n-dom {
@@ -1414,12 +1491,12 @@ legend.field-label {
   right: 5px;
   width: 14px;
   height: 14px;
-  color: var(--quest);
+  color: var(--arcane-hi);
   opacity: 0;
 }
 
 .chip-night input:checked + .chip-face .n-dom {
-  color: var(--quest);
+  color: var(--arcane-hi);
 }
 
 .chip-night input:checked + .chip-face .n-check {
@@ -1433,7 +1510,7 @@ legend.field-label {
     max-height: 92dvh;
     margin: auto 0 0;
     border-bottom: 0;
-    border-radius: 10px 10px 0 0;
+    border-radius: 18px 18px 0 0;
   }
 }
 
@@ -1491,20 +1568,21 @@ legend.field-label {
     padding-top: 0;
   }
 
+  /* the open night is lit from below, like the river */
   .night.is-selected {
-    background: linear-gradient(180deg, rgba(255, 209, 0, 0.05), rgba(255, 209, 0, 0) 70%), var(--leather-hi);
-    box-shadow: inset 0 -3px 0 var(--quest);
+    background: linear-gradient(180deg, rgba(87, 130, 222, 0.2), rgba(87, 130, 222, 0.05) 75%);
+    box-shadow: inset 0 -3px 0 var(--arcane-hi), inset 0 -22px 26px -22px rgba(87, 130, 222, 0.8);
   }
 
   .night.is-selected .chev {
-    color: var(--quest);
+    color: var(--arcane-hi);
   }
 
   .panel {
     gap: 20px;
     padding: 24px 28px 30px;
-    border-top: 1px solid var(--trim);
-    background: linear-gradient(180deg, rgba(255, 209, 0, 0.03), transparent 140px);
+    border-top: 1px solid var(--edge);
+    background: linear-gradient(180deg, rgba(87, 130, 222, 0.07), transparent 160px);
   }
 
   /* groups on the left; the action card and preferences on the right */
@@ -1536,6 +1614,32 @@ legend.field-label {
   .groups.is-multi {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 30px 32px;
+  }
+}
+
+/* Without backdrop blur, or when someone asks for less transparency, the glass turns solid. */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .board,
+  .weeks,
+  .icon-btn,
+  .toast {
+    background: rgba(16, 15, 36, 0.95);
+  }
+
+  .sheet {
+    background: #14132c;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .board,
+  .weeks,
+  .icon-btn,
+  .toast,
+  .sheet {
+    background: #14132c;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 
