@@ -743,9 +743,9 @@ function ensureSchedule_() {
     if (SETTINGS.days.indexOf(isoDay_(d)) === -1 || have[d]) continue;
     const row = [];
     for (let i = 0; i < width; i++) row.push('');
-    row[layout.key] = "'" + d; // the apostrophe keeps it as text
+    row[layout.key] = d; // Run and Time are plain-text columns, so these stay as typed
     if (layout.date !== -1) row[layout.date] = dateCell_(d);
-    if (layout.time !== -1) row[layout.time] = "'" + SETTINGS.startTime;
+    if (layout.time !== -1) row[layout.time] = SETTINGS.startTime;
     add.push(row);
   }
   if (add.length) sh.getRange(sh.getLastRow() + 1, 1, add.length, width).setValues(add);
