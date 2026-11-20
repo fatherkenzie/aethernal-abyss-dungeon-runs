@@ -2,7 +2,8 @@
 
 A sign-up board for the guild's daily endgame runs: Monday to Friday, 21:00 server time.
 Each night shows how many people are going and the dungeon most of them prefer. Tap a night to see
-its groups (tank, healer, 3 DPS each) and sign up.
+its groups (tank, healer, 3 DPS each) and sign up. Officers can move any run to another day or
+time from the Google Sheet, and the board follows.
 
 - **The site** (`index.html`, `styles.css`, `app.js`, `config.js`, `fonts/`) runs on GitHub Pages.
 - **The sign-ups** live in a Google Sheet you own. A small script (`apps-script/Code.gs`) inside the
@@ -24,7 +25,7 @@ sign-ups that are saved only in your own browser.
 4. In the toolbar, pick the function **setup** and press **Run**.
    Google asks for permission the first time: **Review permissions** → choose your account →
    **Advanced** → **Go to … (unsafe)** → **Allow**. ("Unsafe" only means Google hasn't reviewed
-   your own script.) This creates the **Overview**, **Signups**, **Nights** and **Archive** tabs.
+   your own script.) This creates the **Overview**, **Signups**, **Schedule** and **Archive** tabs.
 5. Click **Deploy → New deployment**. Click the gear next to "Select type" and choose **Web app**.
    - Execute as: **Me**
    - Who has access: **Anyone**
@@ -51,9 +52,9 @@ starts with `{"ok":true`.
 
 | Tab | What it's for |
 |---|---|
-| **Overview** | Reading. Upcoming nights, this week and next, laid out like the board: a band per week, a heading per night (time, headcount, top pick, your note), then each group with its tank, healer and DPS. Don't edit it: it's redrawn after every sign-up, after every change you make in Signups or Nights, and whenever the Sheet is opened. |
-| **Signups** | The data, one row per character per night. Fix, edit or delete rows here. Technical columns (ID, timestamps, device) are hidden, Class and Role have dropdowns, and the header has a filter. |
-| **Nights** | Your notes per night (see below). |
+| **Overview** | Reading. Upcoming runs, this week and next, laid out like the board: a band per week, a heading per run (time, headcount, top pick, notes), then each group with its tank, healer and DPS. Don't edit it: it's redrawn after every sign-up, after every change you make in Signups or Schedule, and whenever the Sheet is opened. |
+| **Signups** | The data, one row per character per run. Fix, edit or delete rows here. Technical columns (ID, timestamps, device) are hidden, Class and Role have dropdowns, and the header has a filter. |
+| **Schedule** | One row per run, this week and next: move a run, lock in its dungeon, add a message (see below). |
 | **Archive** | Past weeks. Every Monday, last week's sign-ups move here on their own, so Signups stays short. |
 
 The **Sign-up board** menu (next to Help) has **Refresh overview**, in case it ever looks out of
@@ -62,27 +63,41 @@ date, and **Tidy up the tabs**, which reapplies the layout if something got mess
 **Fix or remove anyone's sign-up.** Edit or delete their row in **Signups**. The board picks it up
 on its next refresh (within 45 seconds, or right away with the refresh button).
 
-**Lock in a dungeon or post a note.** Add a row to **Nights**:
+**Move a run, or change its start time.** In **Schedule**, every run of this week and next already
+has a row. Change its **Date** (double-click for a calendar) or its **Time**:
 
-| Night      | Dungeon     | Message                      |
-|------------|-------------|------------------------------|
-| 2026-11-26 |             | Guild raid first, run after. |
-| 2026-11-27 | Scholomance | Bring your keys              |
+| Run        | Date            | Time  | Dungeon     | Message                                      |
+|------------|-----------------|-------|-------------|----------------------------------------------|
+| 2026-11-26 | Sat 28 Nov 2026 | 20:00 |             | Thursday clashes with the realm maintenance. |
+| 2026-11-27 | Fri 27 Nov 2026 | 21:00 | Scholomance | Bring your keys                              |
 
-- `Night` can be `2026-11-27` or `27.11.2026`.
-- `Dungeon` overrides the preferences. Use the name as it appears on the board.
-- `Message` appears at the top of that night, on the board and in the Overview.
-- Nothing here closes a night: every upcoming night stays open for sign-ups.
+- Everyone signed up for that run moves with it. Nothing in Signups changes, because sign-ups are
+  linked to the run, not to a date.
+- A note in the corner confirms each change ("Thursday 26 November's run is now on Saturday 28
+  November at 20:00…"), or says what it couldn't read.
+- The board shows the new day and time within a minute, marked "Moved from Thu 26" or "Starts
+  20:00", with a line at the top of the run's details. The Overview says "Moved from Thu 26 Nov."
+- Sign-ups close at the run's new start time. Time is server time, typed like `20:00`, `20.30` or
+  `8pm`.
+- To undo, delete the row: the run goes back to its regular night and 21:00, and gets a fresh row
+  on the next sign-up or when the Sheet is next opened.
+- Leave **Run** as it is. It's the run's regular night, and it's what links the sign-ups.
+- A run moved more than two weeks ahead leaves the board until its week comes up.
 
-**Add someone by hand.** Type a row into **Signups** with Night, Character, Class, Spec and Role.
+**Lock in a dungeon or post a note.** Use the same row: **Dungeon** overrides the preferences (use the
+name as it appears on the board), and **Message** appears at the top of that run, on the board and in
+the Overview. Nothing here closes a run: every upcoming run stays open for sign-ups.
+
+**Add someone by hand.** Type a row into **Signups** with Night (the run's regular night, as in the
+Schedule's Run column), Character, Class, Spec and Role.
 Dungeons takes names separated by commas, such as `Scholomance, Blackrock Depths`, or stays empty
 for "any". Nobody can edit that row from the board, only from the Sheet.
 
 ### How the board behaves
 
-- Every upcoming night is open, this week and next, and people can sign up for several at once.
-  A night closes at 21:00 server time (Europe/Berlin), when the run starts. The Sheet enforces this
-  too, so a wrong phone clock can't get around it.
+- Every upcoming run is open, this week and next, and people can sign up for several at once.
+  A run closes when it starts, at 21:00 server time (Europe/Berlin) unless the Schedule says
+  otherwise. The Sheet enforces this too, so a wrong phone clock can't get around it.
 - There's no cap. Groups fill by role in sign-up order: 1 tank, 1 healer, 3 DPS. When a role is full,
   the next person in that role starts the next group, so 3, 4 or more groups form on their own.
   If someone un-signs, everyone behind them moves up.
@@ -92,7 +107,8 @@ for "any". Nobody can edit that row from the board, only from the Sheet.
   their browser, fix their row in the Sheet.
 - Each sign-up can list several preferred dungeons, or none for "any". Every pick counts once, the
   night shows the dungeon with the most picks, and ties are shown as ties.
-- Links like `…/abyss-board/#2026-11-27` open that night directly. Handy for Discord.
+- Links like `…/abyss-board/#2026-11-27` open that run directly, even after it has been moved.
+  Handy for Discord.
 - People in other time zones also see the start time in their own time.
 
 ---
@@ -110,6 +126,7 @@ for "any". Nobody can edit that row from the board, only from the Sheet.
 **Updating the script.** When `Code.gs` changes, in Apps Script:
 1. Replace the code with the new `Code.gs` and save.
 2. Run **setup** once. It restyles the tabs and builds the Overview; your sign-ups stay as they are.
+   (Coming from an older version, it also turns the Nights tab into the Schedule, keeping your notes.)
 3. **Deploy → Manage deployments → Edit (pencil) → Version: New version → Deploy**.
    The URL stays the same. Without a new version, the board keeps using the old script.
 

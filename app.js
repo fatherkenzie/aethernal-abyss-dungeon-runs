@@ -146,12 +146,13 @@
   function daysBetween(a, b) {
     return Math.round((Date.parse(b + 'T12:00:00Z') - Date.parse(a + 'T12:00:00Z')) / 86400000);
   }
-  function isLocked(date) { return nowKey() >= date + 'T' + settings.startTime; }
+  /** A run locks when it starts, at its own date and time. */
+  function isLocked(run) { return nowKey() >= run.date + 'T' + run.time; }
 
-  /** Milliseconds timestamp of a night's start, daylight saving included. */
-  function startMs(date) {
+  /** Milliseconds timestamp of a start in server time, daylight saving included. */
+  function startMs(date, time) {
     const d = date.split('-').map(Number);
-    const t = settings.startTime.split(':').map(Number);
+    const t = time.split(':').map(Number);
     const target = Date.UTC(d[0], d[1] - 1, d[2], t[0], t[1]);
     let guess = target;
     for (let i = 0; i < 3; i++) {
@@ -170,18 +171,18 @@
   })();
 
   /** "20:00 your time" for guildies outside the server's time zone. */
-  function localStartHint(date) {
+  function localStartHint(run) {
     if (!viewerTz || viewerTz === settings.timeZone) return '';
-    const local = zoneParts(startMs(date), viewerTz);
-    if (local.date === date && local.time === settings.startTime) return '';
-    const day = local.date === date ? '' : ' ' + DOW_SHORT[isoDay(local.date) - 1];
+    const local = zoneParts(startMs(run.date, run.time), viewerTz);
+    if (local.date === run.date && local.time === run.time) return '';
+    const day = local.date === run.date ? '' : ' ' + DOW_SHORT[isoDay(local.date) - 1];
     return local.time + day + ' your time';
   }
 
-  function zoneAbbrev(date) {
+  function zoneAbbrev(run) {
     try {
       const parts = new Intl.DateTimeFormat('en-GB', { timeZone: settings.timeZone, timeZoneName: 'short' })
-        .formatToParts(new Date(startMs(date)));
+        .formatToParts(new Date(startMs(run.date, run.time)));
       const name = parts.find(function (p) { return p.type === 'timeZoneName'; });
       return name ? name.value : '';
     } catch (e) { return ''; }
@@ -193,20 +194,21 @@
   function fmtShort(date) { return DOW_SHORT[isoDay(date) - 1] + ' ' + dom(date) + ' ' + MON_SHORT[mon(date)]; }
   function fmtLong(date) { return dayName(date) + ' ' + dom(date) + ' ' + MON_LONG[mon(date)]; }
   function fmtRange(a, b) {
+    if (a === b) return dom(a) + ' ' + MON_SHORT[mon(a)];
     return mon(a) === mon(b)
       ? dom(a) + '–' + dom(b) + ' ' + MON_SHORT[mon(b)]
       : dom(a) + ' ' + MON_SHORT[mon(a)] + ' – ' + dom(b) + ' ' + MON_SHORT[mon(b)];
   }
 
   // Durations use no-break spaces so "in 9 h 45 min" never splits across lines.
-  function untilText(date) {
+  function untilText(run) {
     const S = ' ';
     const today = todayStr();
-    if (date !== today) {
-      const days = daysBetween(today, date);
+    if (run.date !== today) {
+      const days = daysBetween(today, run.date);
       return days === 1 ? 'tomorrow' : 'in' + S + days + S + 'days';
     }
-    const ms = startMs(date) - Date.now();
+    const ms = startMs(run.date, run.time) - Date.now();
     if (ms <= 30000) return 'starting' + S + 'now';
     const min = Math.ceil(ms / 60000);
     if (min < 60) return 'in' + S + min + S + 'min';
@@ -222,6 +224,42 @@
     const m = Math.round(s / 60);
     if (m < 60) return m === 1 ? '1 minute ago' : m + ' minutes ago';
     return 'at ' + zoneParts(ms, viewerTz || settings.timeZone).time;
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Runs                                                               */
+  /* ---------------------------------------------------------------- */
+
+  // A run is known by its key, its regular night: sign-ups point at the key. Officers can move a
+  // run to another date and time in the sheet, and its sign-ups move with it.
+  function isDateStr(s) { return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s); }
+  function isTimeStr(s) { return typeof s === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(s); }
+
+  function makeRun(key, extra) {
+    const r = extra || {};
+    return {
+      key: key,
+      date: isDateStr(r.date) ? r.date : key,
+      time: isTimeStr(r.time) ? r.time : settings.startTime,
+      dungeon: r.dungeon ? String(r.dungeon) : '',
+      message: r.message ? String(r.message) : '',
+    };
+  }
+
+  function byRunTime(a, b) {
+    const x = a.date + 'T' + a.time;
+    const y = b.date + 'T' + b.time;
+    if (x !== y) return x < y ? -1 : 1;
+    return a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
+  }
+
+  /** The regular runs in a range: before the first load, and for older sheet scripts. */
+  function defaultRuns(range, notes) {
+    const out = [];
+    for (let d = range.from; d <= range.to; d = addDays(d, 1)) {
+      if (settings.days.indexOf(isoDay(d)) !== -1) out.push(makeRun(d, notes && notes[d]));
+    }
+    return out;
   }
 
   /* ---------------------------------------------------------------- */
@@ -282,37 +320,55 @@
 
   /** Same answers as the sheet, kept in this browser. Used while config.js has no apiUrl. */
   function demoApi() {
-    const KEY = 'demo-v2';
+    const KEY = 'demo-v3';
     const monday = mondayOf(todayStr());
     let db = store.get(KEY, null);
-    if (!db || db.monday !== monday || !Array.isArray(db.signups)) {
+    if (!db || db.monday !== monday || !Array.isArray(db.signups) || !Array.isArray(db.schedule)) {
       db = seedDemo(monday);
       store.set(KEY, db);
     }
     function save() { store.set(KEY, db); }
     function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
     function sameCharacter(a, b) { return a.name.toLowerCase() === b.name.toLowerCase() && a.class === b.class; }
+    /** Like the sheet: Schedule rows move runs; regular nights without a row keep their date and time. */
+    function runsIn(range) {
+      const rows = {};
+      db.schedule.forEach(function (r) { if (!rows[r.key]) rows[r.key] = makeRun(r.key, r); });
+      const out = Object.keys(rows).map(function (k) { return rows[k]; })
+        .filter(function (r) { return r.date >= range.from && r.date <= range.to; });
+      defaultRuns(range).forEach(function (r) { if (!rows[r.key]) out.push(r); });
+      return out.sort(byRunTime);
+    }
+    function runForKey(key) {
+      const row = db.schedule.find(function (r) { return r.key === key; });
+      if (row) return makeRun(key, row);
+      return settings.days.indexOf(isoDay(key)) !== -1 ? makeRun(key) : null;
+    }
     function payload(range) {
       const me = deviceToken();
+      const runs = runsIn(range);
+      const keys = {};
+      runs.forEach(function (r) { keys[r.key] = true; });
       return {
         ok: true,
         now: nowKey(),
         settings: { timeZone: settings.timeZone, startTime: settings.startTime, days: settings.days },
+        runs: runs,
         signups: db.signups
-          .filter(function (s) { return s.date >= range.from && s.date <= range.to; })
+          .filter(function (s) { return keys[s.date]; })
           .map(function (s) {
             const o = Object.assign({}, s, { mine: s.owner === me });
             delete o.owner;
             return o;
           }),
-        nights: db.nights.filter(function (n) { return n.date >= range.from && n.date <= range.to; }),
       };
     }
-    function problem(date, existing) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return 'invalid';
-      if (!existing && settings.days.indexOf(isoDay(date)) === -1) return 'not_a_run_day';
-      if (isLocked(date)) return 'locked';
-      if (!existing && daysBetween(todayStr(), date) > 14) return 'too_far';
+    function problem(key, existing) {
+      if (!isDateStr(key)) return 'invalid';
+      const run = runForKey(key);
+      if (!run) return existing ? '' : 'not_a_run_day';
+      if (isLocked(run)) return 'locked';
+      if (!existing && daysBetween(todayStr(), run.date) > 14) return 'too_far';
       return '';
     }
     function find(id) {
@@ -426,9 +482,12 @@
     return {
       monday: monday,
       signups: signups,
-      nights: [
-        { date: d(4), dungeon: '', message: 'Meet at the Stratholme gate at 20:50.' },
-        { date: d(7), dungeon: 'Dire Maul North', message: 'Tribute run, bring your Crescent Keys.' },
+      // What officers set in the Schedule tab: notes, a locked-in dungeon, a new start time, a moved run.
+      schedule: [
+        { key: d(4), message: 'Meet at the Stratholme gate at 20:50.' },
+        { key: d(7), dungeon: 'Dire Maul North', message: 'Tribute run, bring your Crescent Keys.' },
+        { key: d(8), time: '20:30' },
+        { key: d(10), date: d(12), time: '20:00', message: 'Thursday clashes with the realm maintenance.' },
       ],
     };
   }
@@ -441,7 +500,8 @@
 
   const state = {
     signups: [],
-    nights: {},
+    runs: [],
+    runByKey: {},
     loaded: false,
     loading: false,
     error: null,
@@ -453,21 +513,48 @@
     pending: {},
   };
 
+  function loadRange() {
+    const m0 = mondayOf(todayStr());
+    return { from: m0, to: addDays(m0, 13) };
+  }
+
+  /** The runs on show: the sheet's once loaded, the regular nights until then. */
+  function currentRuns() { return state.loaded ? state.runs : defaultRuns(loadRange()); }
+
+  function findRun(key) {
+    return state.runByKey[key] || currentRuns().find(function (r) { return r.key === key; }) || null;
+  }
+  function runFor(key) { return findRun(key) || makeRun(key); }
+
+  /** This week and next, each with the runs that fall in it (by their actual date). */
   function weeks() {
     const m0 = mondayOf(todayStr());
+    const runs = currentRuns();
     return [0, 1].map(function (i) {
       const monday = addDays(m0, i * 7);
-      return { index: i, monday: monday, dates: settings.days.map(function (d) { return addDays(monday, d - 1); }) };
+      const sunday = addDays(monday, 6);
+      return {
+        index: i,
+        monday: monday,
+        runs: runs.filter(function (r) { return r.date >= monday && r.date <= sunday; }),
+      };
     });
   }
 
-  function loadRange() {
-    const w = weeks();
-    return { from: w[0].monday, to: addDays(w[1].monday, 6) };
+  function weekOf(key) {
+    return weeks().findIndex(function (w) { return w.runs.some(function (r) { return r.key === key; }); });
   }
 
-  function defaultWeek() { return weeks()[0].dates.every(isLocked) ? 1 : 0; }
-  function firstOpen(dates) { return dates.find(function (d) { return !isLocked(d); }) || null; }
+  function defaultWeek() { return weeks()[0].runs.every(isLocked) ? 1 : 0; }
+  function firstOpen(runs) {
+    const run = runs.find(function (r) { return !isLocked(r); });
+    return run ? run.key : null;
+  }
+
+  /** Keys in start order, for the sign-up request and the button label. */
+  function sortedKeys(keys) {
+    return Array.from(keys).map(runFor).sort(byRunTime).map(function (r) { return r.key; });
+  }
 
   // Sign-up time first; ties keep the sheet's row order (the sort is stable).
   function byOrder(a, b) {
@@ -526,18 +613,21 @@
     return { list: list, any: any, max: max, leaders: list.filter(function (x) { return x.n === max && max > 0; }) };
   }
 
-  function nightModel(date) {
-    const entries = state.signups.filter(function (s) { return s.date === date; }).sort(byOrder);
-    const meta = state.nights[date] || null;
-    const locked = isLocked(date);
+  function nightModel(run) {
+    const entries = state.signups.filter(function (s) { return s.date === run.key; }).sort(byOrder);
+    const locked = isLocked(run);
     return {
-      date: date,
+      key: run.key,
+      date: run.date,
+      time: run.time,
+      moved: run.date !== run.key,
+      retimed: run.time !== settings.startTime,
+      message: run.message,
       entries: entries,
-      meta: meta,
-      phase: !locked ? 'open' : date === todayStr() ? 'started' : 'done',
+      phase: !locked ? 'open' : run.date === todayStr() ? 'started' : 'done',
       groups: buildGroups(entries),
       prefs: tally(entries),
-      fixed: meta && meta.dungeon ? resolveDungeon(meta.dungeon) : null,
+      fixed: run.dungeon ? resolveDungeon(run.dungeon) : null,
       mine: entries.filter(function (e) { return e.mine; }),
     };
   }
@@ -583,12 +673,30 @@
   }
 
   function whenHtml(n) {
-    if (n.phase === 'open') return '<span class="when">' + esc(untilText(n.date)) + '</span>';
+    if (n.phase === 'open') return '<span class="when">' + esc(untilText(n)) + '</span>';
     if (n.phase === 'started') return '<span class="when">' + icon('i-lock') + 'Started</span>';
     return '<span class="when">Done</span>';
   }
 
-  /** The overview stays lean: dungeon, headcount, when, and whether you're in. */
+  /** "Moved from Thu 26", "Starts 20:00" or both, when officers changed the run in the sheet. */
+  function changeFlag(n) {
+    const S = '\u00a0'; // each part stays on one line; a narrow tile breaks after the comma
+    const parts = [];
+    if (n.moved) parts.push(['Moved', 'from', DOW_SHORT[isoDay(n.key) - 1], dom(n.key)].join(S));
+    if (n.retimed) parts.push((parts.length ? 'starts' : 'Starts') + S + n.time);
+    return parts.join(', ');
+  }
+
+  /** The same change, spelled out at the top of the run's details. */
+  function changeNotice(n) {
+    const from = n.moved ? 'Moved from ' + fmtLong(n.key) : '';
+    const at = n.retimed ? 'starts at ' + n.time + ' instead of ' + settings.startTime : '';
+    if (from && at) return from + ', and ' + at + '.';
+    if (from) return from + '.';
+    return at ? 'This run ' + at + '.' : '';
+  }
+
+  /** The overview stays lean: dungeon, headcount, when, any change to the run, and whether you're in. */
   function tile(n, selected) {
     const today = n.date === todayStr();
     const chev = icon('i-chevron', 'chev');
@@ -600,6 +708,8 @@
       inner = '<span class="pick"><span class="pick-name ' + (p.cls || '') + '">' + (p.icon ? icon(p.icon) : '') + esc(p.name) + '</span>' +
         (p.meta ? '<span class="pick-meta">' + esc(p.meta) + '</span>' : '') + '</span>' + whenHtml(n) + chev;
       let line = '';
+      const change = n.phase === 'done' ? '' : changeFlag(n);
+      if (change) line += '<span class="flag is-change">' + icon('i-clock') + esc(change) + '</span>';
       if (n.entries.length) {
         line += '<span class="count"><b>' + n.entries.length + '</b> ' + (n.phase === 'done' ? 'went' : 'going') +
           (n.groups.length > 1 ? ' in ' + n.groups.length + ' groups' : '') + '</span>';
@@ -607,16 +717,16 @@
       if (n.mine.length && n.phase !== 'done') line += '<span class="flag">' + icon('i-check') + 'You’re in</span>';
       if (line) inner += '<span class="line">' + line + '</span>';
     }
-    return '<button class="night-head" type="button" data-action="toggle" data-date="' + n.date + '" data-focus="night-' + n.date +
-      '" aria-expanded="' + selected + '" aria-controls="panel-' + n.date + '">' +
+    return '<button class="night-head" type="button" data-action="toggle" data-key="' + n.key + '" data-focus="night-' + n.key +
+      '" aria-expanded="' + selected + '" aria-controls="panel-' + n.key + '">' +
       '<span class="date"><span class="dow">' + (today ? 'Today' : DOW_SHORT[isoDay(n.date) - 1]) + '</span><span class="dom">' + dom(n.date) +
       '</span><span class="vh"> ' + MON_LONG[mon(n.date)] + '</span></span>' + inner + '</button>';
   }
 
   function startLine(n) {
-    const extra = [zoneAbbrev(n.date), localStartHint(n.date)].filter(Boolean).join(', ');
-    return 'Starts at ' + settings.startTime + ' server time' + (extra ? ' (' + extra + ')' : '') +
-      (n.date === todayStr() ? ', ' + untilText(n.date) : '') + '.';
+    const extra = [zoneAbbrev(n), localStartHint(n)].filter(Boolean).join(', ');
+    return 'Starts at ' + n.time + ' server time' + (extra ? ' (' + extra + ')' : '') +
+      (n.date === todayStr() ? ', ' + untilText(n) : '') + '.';
   }
 
   function mineRow(n, e) {
@@ -640,7 +750,7 @@
   function cardHtml(n) {
     if (n.phase === 'done') return '<div class="card is-quiet"><p class="card-line">This run is over.</p></div>';
     if (n.phase === 'started') {
-      return '<div class="card is-quiet"><p class="card-line">' + icon('i-lock') + '<span>Started at ' + settings.startTime +
+      return '<div class="card is-quiet"><p class="card-line">' + icon('i-lock') + '<span>Started at ' + n.time +
         ' server time. Sign-ups are closed.</span></p>' +
         (n.mine.length ? '<p class="card-line is-in">' + icon('i-check') + '<span>You’re in as ' + nameList(n.mine) + '.</span></p>' : '') + '</div>';
     }
@@ -648,10 +758,10 @@
     if (n.mine.length) {
       html += '<p class="card-line is-in">' + icon('i-check') + '<span>You’re signed up</span></p>' +
         '<ul class="mine-list">' + n.mine.map(function (e) { return mineRow(n, e); }).join('') + '</ul>' +
-        '<button class="btn btn-secondary" type="button" data-action="signup" data-date="' + n.date + '" data-focus="signup-' + n.date +
+        '<button class="btn btn-secondary" type="button" data-action="signup" data-key="' + n.key + '" data-focus="signup-' + n.key +
         '">Sign up another character</button>';
     } else {
-      html += '<button class="btn btn-primary" type="button" data-action="signup" data-date="' + n.date + '" data-focus="signup-' + n.date +
+      html += '<button class="btn btn-primary" type="button" data-action="signup" data-key="' + n.key + '" data-focus="signup-' + n.key +
         '">Sign up for ' + dayName(n.date) + '</button>';
     }
     return html + '</div>';
@@ -667,8 +777,8 @@
 
   /** An empty slot is a shortcut: it opens the sign-up for that role. */
   function openSlotRow(n, g, slot, i) {
-    return '<li class="member is-open"><button class="slot-btn" type="button" data-action="slot" data-date="' + n.date + '" data-role="' + slot +
-      '" data-focus="slot-' + n.date + '-' + g.index + '-' + slot + '-' + i + '">' + slotHtml(null, slot) +
+    return '<li class="member is-open"><button class="slot-btn" type="button" data-action="slot" data-key="' + n.key + '" data-role="' + slot +
+      '" data-focus="slot-' + n.key + '-' + g.index + '-' + slot + '-' + i + '">' + slotHtml(null, slot) +
       '<span class="member-main">Open ' + SLOT_WORD[slot] + ' slot<span class="vh">, sign up</span></span>' + icon('i-plus', 'slot-plus') + '</button></li>';
   }
 
@@ -714,11 +824,15 @@
   }
 
   function panelHtml(n) {
-    let html = '<section class="panel" id="panel-' + n.date + '" aria-label="' + fmtLong(n.date) + '">' +
+    let html = '<section class="panel" id="panel-' + n.key + '" aria-label="' + fmtLong(n.date) + '">' +
       '<h2 class="panel-title">' + fmtLong(n.date) + '</h2>';
-    if (n.meta && n.meta.message) {
-      html += '<p class="notice">' + icon('i-flag') + '<span><span class="vh">Organiser note: </span>' + esc(n.meta.message) + '</span></p>';
+    const notes = [];
+    const change = n.phase === 'done' ? '' : changeNotice(n);
+    if (change) notes.push('<p class="notice">' + icon('i-clock') + '<span>' + esc(change) + '</span></p>');
+    if (n.message) {
+      notes.push('<p class="notice">' + icon('i-flag') + '<span><span class="vh">Organiser note: </span>' + esc(n.message) + '</span></p>');
     }
+    if (notes.length) html += '<div class="notices">' + notes.join('') + '</div>';
     if (state.loaded) {
       html += '<div class="panel-grid">' + cardHtml(n) +
         '<div class="groups' + (n.groups.length > 1 ? ' is-multi' : '') + '">' +
@@ -727,34 +841,41 @@
     return html + '</section>';
   }
 
+  /** A week's dates run from its first run to its last, so a run moved to Saturday widens it. */
+  function weekRange(w) {
+    if (!w.runs.length) return fmtRange(w.monday, addDays(w.monday, 6));
+    return fmtRange(w.runs[0].date, w.runs[w.runs.length - 1].date);
+  }
+
   function renderWeeks() {
     $('#weeks').innerHTML = weeks().map(function (w) {
       return '<button type="button" class="week-btn" aria-pressed="' + (state.week === w.index) + '" data-action="week" data-week="' + w.index +
         '" data-focus="week-' + w.index + '"><span class="week-name">' + (w.index === 0 ? 'This week' : 'Next week') + '</span>' +
-        '<span class="week-dates">' + fmtRange(w.dates[0], w.dates[w.dates.length - 1]) + '</span></button>';
+        '<span class="week-dates">' + weekRange(w) + '</span></button>';
     }).join('');
   }
 
   function renderBoard() {
     const board = $('#board');
     const week = weeks()[state.week];
-    const nights = week.dates.map(nightModel);
+    const nights = week.runs.map(nightModel);
     const isWide = wide.matches;
     let html = '';
     if (!state.loaded && state.error) {
       html += '<div class="board-error"><p>' + esc(state.error.message) + '</p>' +
         '<button class="btn btn-secondary" type="button" data-action="retry" data-focus="retry">Try again</button></div>';
     }
-    html += '<ol class="nights" style="--cols:' + week.dates.length + '">';
+    if (!nights.length) html += '<p class="board-empty">No runs are scheduled for this week.</p>';
+    else html += '<ol class="nights" style="--cols:' + nights.length + '">';
     nights.forEach(function (n) {
-      const selected = state.selected === n.date;
+      const selected = state.selected === n.key;
       const cls = ['night', 'is-' + n.phase];
       if (n.date === todayStr()) cls.push('is-today');
       if (selected) cls.push('is-selected');
       html += '<li class="' + cls.join(' ') + '">' + tile(n, selected) + (selected && !isWide ? panelHtml(n) : '') + '</li>';
     });
-    html += '</ol>';
-    const sel = nights.find(function (n) { return n.date === state.selected; });
+    if (nights.length) html += '</ol>';
+    const sel = nights.find(function (n) { return n.key === state.selected; });
     if (sel && isWide) html += panelHtml(sel);
     board.innerHTML = html;
     board.setAttribute('aria-busy', state.loaded ? 'false' : 'true');
@@ -807,15 +928,33 @@
         created: s.created || '',
       });
     });
-    state.nights = {};
-    (data.nights || []).forEach(function (n) { state.nights[n.date] = n; });
+    if (Array.isArray(data.runs)) {
+      state.runs = data.runs
+        .filter(function (r) { return r && isDateStr(r.key); })
+        .map(function (r) { return makeRun(r.key, r); })
+        .sort(byRunTime);
+    } else {
+      // An older sheet script: regular nights only, with its notes.
+      const notes = {};
+      (data.nights || []).forEach(function (n) {
+        if (n && isDateStr(n.date)) notes[n.date] = { dungeon: n.dungeon, message: n.message };
+      });
+      state.runs = defaultRuns(loadRange(), notes);
+    }
+    state.runByKey = {};
+    state.runs.forEach(function (r) { state.runByKey[r.key] = r; });
     const first = !state.loaded;
     state.loaded = true;
     state.lastSync = Date.now();
     state.error = null;
-    if (first && !state.touched) {
-      state.week = defaultWeek();
-      state.selected = firstOpen(weeks()[state.week].dates);
+    if (first) {
+      // A link (or a click before the first load) may point at a run that has moved to another week.
+      const wi = state.touched && state.selected ? weekOf(state.selected) : -1;
+      if (wi !== -1) state.week = wi;
+      else if (!state.touched || state.selected) {
+        state.week = defaultWeek();
+        state.selected = firstOpen(weeks()[state.week].runs);
+      }
     }
     if (state.week > weeks().length - 1) state.week = 0;
   }
@@ -866,7 +1005,7 @@
     try {
       apply(await api.write('remove', { id: id }, loadRange()));
       state.confirm = null;
-      toast('Un-signed ' + entry.name + ' from ' + fmtShort(entry.date) + '.');
+      toast('Un-signed ' + entry.name + ' from ' + fmtShort(runFor(entry.date).date) + '.');
       return true;
     } catch (err) {
       toast(errorText(err), 'error');
@@ -885,7 +1024,7 @@
   const sheet = $('#sheet');
   const form = $('#sheet-form');
   const sheetState = {
-    mode: 'signup', id: null, date: null, role: null, cls: null, spec: null,
+    mode: 'signup', id: null, key: null, role: null, cls: null, spec: null,
     nights: new Set(), dungeons: new Set(), busy: false, confirming: false, returnFocus: null,
   };
 
@@ -896,7 +1035,7 @@
 
   function renderSheetSub() {
     const sub = $('#sheet-sub');
-    if (sheetState.mode === 'edit') sub.textContent = fmtLong(sheetState.date);
+    if (sheetState.mode === 'edit') sub.textContent = fmtLong(runFor(sheetState.key).date);
     else if (sheetState.role) {
       sub.innerHTML = 'Showing ' + SLOT_WORD[sheetState.role] + ' specs. ' +
         '<button type="button" class="link-btn" data-sheet="all-roles">Show all roles</button>';
@@ -932,20 +1071,29 @@
     }).join('');
   }
 
-  /** Every upcoming night is open. Past nights simply aren't listed. */
+  /** Every upcoming run is open, by its actual date and time. Past runs simply aren't listed. */
   function renderNights() {
-    Array.from(sheetState.nights).forEach(function (d) { if (isLocked(d)) sheetState.nights.delete(d); });
+    Array.from(sheetState.nights).forEach(function (k) {
+      const run = findRun(k);
+      if (!run || isLocked(run)) sheetState.nights.delete(k);
+    });
     const html = weeks().map(function (w) {
-      const open = w.dates.filter(function (d) { return !isLocked(d); });
+      const open = w.runs.filter(function (r) { return !isLocked(r); });
       if (!open.length) return '';
       return '<div class="nights-week"><p class="nights-week-name">' + (w.index === 0 ? 'This week' : 'Next week') + '</p>' +
-        '<div class="nights-grid">' + open.map(function (d) {
-          const mine = state.signups.some(function (s) { return s.date === d && s.mine; });
-          const note = mine ? 'You’re in' : d === todayStr() ? 'Tonight' : '';
-          return '<label class="chip chip-night"><input type="checkbox" name="night" value="' + d + '"' +
-            (sheetState.nights.has(d) ? ' checked' : '') + ' aria-label="' + fmtLong(d) + (note ? ', ' + note : '') + '">' +
-            '<span class="chip-face">' + icon('i-check', 'n-check') + '<span class="n-dow">' + DOW_SHORT[isoDay(d) - 1] + '</span>' +
-            '<span class="n-dom">' + dom(d) + '</span><span class="n-note">' + (note || '&nbsp;') + '</span></span></label>';
+        '<div class="nights-grid">' + open.map(function (r) {
+          const mine = state.signups.some(function (s) { return s.date === r.key && s.mine; });
+          const tonight = r.date === todayStr();
+          const retimed = r.time !== settings.startTime;
+          const note = mine ? 'You’re in' : retimed ? r.time : tonight ? 'Tonight' : r.date !== r.key ? 'Moved' : '';
+          const label = [fmtLong(r.date) + (retimed ? ' at ' + r.time : '')];
+          if (r.date !== r.key) label.push('moved from ' + dayName(r.key));
+          if (mine) label.push('You’re in');
+          else if (tonight) label.push('Tonight');
+          return '<label class="chip chip-night"><input type="checkbox" name="night" value="' + r.key + '"' +
+            (sheetState.nights.has(r.key) ? ' checked' : '') + ' aria-label="' + esc(label.join(', ')) + '">' +
+            '<span class="chip-face">' + icon('i-check', 'n-check') + '<span class="n-dow">' + DOW_SHORT[isoDay(r.date) - 1] + '</span>' +
+            '<span class="n-dom">' + dom(r.date) + '</span><span class="n-note">' + (note || '&nbsp;') + '</span></span></label>';
         }).join('') + '</div></div>';
     }).join('');
     $('#f-nights').innerHTML = html || '<p class="field-hint">No nights are open for sign-ups right now.</p>';
@@ -966,13 +1114,13 @@
     const busy = sheetState.busy;
     let html = '<p class="sheet-error" id="sheet-error" role="alert" hidden></p>';
     if (sheetState.mode === 'signup') {
-      const picked = Array.from(sheetState.nights).sort();
-      const label = busy ? 'Signing up…' : picked.length === 1 ? 'Sign up for ' + fmtShort(picked[0])
+      const picked = sortedKeys(sheetState.nights);
+      const label = busy ? 'Signing up…' : picked.length === 1 ? 'Sign up for ' + fmtShort(runFor(picked[0]).date)
         : picked.length > 1 ? 'Sign up for ' + picked.length + ' nights' : 'Sign up';
       html += '<button type="submit" class="btn btn-primary"' + (busy ? ' disabled' : '') + '>' + label + '</button>' +
         '<button type="button" class="btn btn-ghost" data-close>Cancel</button>';
     } else if (sheetState.confirming) {
-      html += '<p class="confirm-text">Un-sign ' + esc($('#f-name').value || 'this character') + ' from ' + dayName(sheetState.date) + '?</p>' +
+      html += '<p class="confirm-text">Un-sign ' + esc($('#f-name').value || 'this character') + ' from ' + dayName(runFor(sheetState.key).date) + '?</p>' +
         '<button type="button" class="btn btn-danger" data-sheet="unsign-yes"' + (busy ? ' disabled' : '') + '>' + (busy ? 'Un-signing…' : 'Un-sign') + '</button>' +
         '<button type="button" class="btn btn-ghost" data-sheet="unsign-no"' + (busy ? ' disabled' : '') + '>Keep</button>';
     } else {
@@ -1038,20 +1186,21 @@
     sheetState.confirming = false;
     const key = sheetState.returnFocus;
     const target = (key && document.querySelector('[data-focus="' + key + '"]')) ||
-      (sheetState.date && document.querySelector('[data-focus="night-' + sheetState.date + '"]'));
+      (sheetState.key && document.querySelector('[data-focus="night-' + sheetState.key + '"]'));
     if (target) target.focus({ preventScroll: true });
   }
 
-  function openSignup(date, role) {
+  function openSignup(key, role) {
     const profile = store.get('profile', {}) || {};
-    Object.assign(sheetState, { mode: 'signup', id: null, date: date || null, role: role || null, busy: false, confirming: false });
+    const run = key ? findRun(key) : null;
+    Object.assign(sheetState, { mode: 'signup', id: null, key: key || null, role: role || null, busy: false, confirming: false });
     $('#sheet-title').textContent = 'Sign up';
     $('#f-name').value = profile.name || '';
     $('#f-note').value = '';
     sheetState.cls = profile.class && classById(profile.class).specs.length ? profile.class : null;
     sheetState.spec = profile.spec || null;
     sheetState.dungeons = new Set(parseDungeons(profile.dungeons || []));
-    sheetState.nights = new Set(date && !isLocked(date) ? [date] : []);
+    sheetState.nights = new Set(run && !isLocked(run) ? [key] : []);
     $('#nights-field').hidden = false;
     clearErrors();
     renderSheet();
@@ -1062,7 +1211,7 @@
     const e = state.signups.find(function (s) { return s.id === id; });
     if (!e) return;
     Object.assign(sheetState, {
-      mode: 'edit', id: id, date: e.date, role: null, busy: false, confirming: false,
+      mode: 'edit', id: id, key: e.date, role: null, busy: false, confirming: false,
       cls: e.class, spec: e.spec, nights: new Set(), dungeons: new Set(e.dungeons),
     });
     $('#sheet-title').textContent = 'Edit sign-up';
@@ -1113,7 +1262,7 @@
       const why = s.reason === 'duplicate'
         ? data.name + ' is already in as ' + classById(data.class).name
         : SKIP_REASON[s.reason] || 'not available';
-      return fmtShort(s.date) + ' (' + why + ')';
+      return fmtShort(runFor(s.date).date) + ' (' + why + ')';
     }).join(', ');
   }
 
@@ -1130,7 +1279,8 @@
     renderSheetFoot();
     try {
       if (sheetState.mode === 'signup') {
-        const dates = Array.from(sheetState.nights).sort();
+        // Sign-ups name runs by their key, wherever the run is now.
+        const dates = sortedKeys(sheetState.nights);
         const res = await api.write('signup', Object.assign({ dates: dates }, withNames(data)), loadRange());
         apply(res);
         const created = (res.result && res.result.created) || [];
@@ -1145,7 +1295,8 @@
         }
         store.set('profile', { name: data.name, class: data.class, spec: data.spec, dungeons: data.dungeons });
         closeSheet();
-        let msg = created.length === 1 ? 'Signed up for ' + fmtShort(created[0].date) + '.' : 'Signed up for ' + created.length + ' nights.';
+        let msg = created.length === 1 ? 'Signed up for ' + fmtShort(runFor(created[0].date).date) + '.'
+          : 'Signed up for ' + created.length + ' nights.';
         if (skipped.length) msg += ' Skipped ' + skippedText(skipped, data) + '.';
         toast(msg);
       } else {
@@ -1250,8 +1401,8 @@
     if (!t || sheet.contains(t)) return;
     const action = t.getAttribute('data-action');
     if (action === 'toggle') {
-      const date = t.getAttribute('data-date');
-      state.selected = state.selected === date ? null : date;
+      const key = t.getAttribute('data-key');
+      state.selected = state.selected === key ? null : key;
       state.touched = true;
       state.confirm = null;
       setHash(state.selected);
@@ -1264,16 +1415,16 @@
       const i = Number(t.getAttribute('data-week'));
       if (state.week !== i) {
         state.week = i;
-        state.selected = firstOpen(weeks()[i].dates);
+        state.selected = firstOpen(weeks()[i].runs);
         state.touched = true;
         state.confirm = null;
         setHash(state.selected);
         render();
       }
     } else if (action === 'signup') {
-      openSignup(t.getAttribute('data-date'), null);
+      openSignup(t.getAttribute('data-key'), null);
     } else if (action === 'slot') {
-      openSignup(t.getAttribute('data-date'), t.getAttribute('data-role'));
+      openSignup(t.getAttribute('data-key'), t.getAttribute('data-role'));
     } else if (action === 'edit') {
       state.confirm = null;
       openEdit(t.getAttribute('data-id'));
@@ -1320,16 +1471,16 @@
     }
     if (CFG.tagline !== undefined) $('#tagline').textContent = CFG.tagline;
 
+    // Links name a run by its key (#2026-11-26); where it is now is settled once the sheet answers.
     const hash = /^#(\d{4}-\d{2}-\d{2})$/.exec(location.hash);
-    const w = weeks();
-    const wi = hash ? w.findIndex(function (x) { return x.dates.indexOf(hash[1]) !== -1; }) : -1;
-    if (wi !== -1) {
-      state.week = wi;
+    const wi = hash ? weekOf(hash[1]) : -1;
+    if (hash) {
       state.selected = hash[1];
       state.touched = true;
+      state.week = wi !== -1 ? wi : defaultWeek();
     } else {
       state.week = defaultWeek();
-      state.selected = firstOpen(w[state.week].dates);
+      state.selected = firstOpen(weeks()[state.week].runs);
     }
     render();
     refresh();
