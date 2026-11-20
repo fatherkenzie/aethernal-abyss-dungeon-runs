@@ -4,7 +4,7 @@
 window.BOARD_CONFIG = {
   // Paste your Apps Script web app URL here (it ends with /exec).
   // While this is empty the board runs in demo mode: sample sign-ups, saved in your browser only.
-  apiUrl: "",
+  apiUrl: "https://script.google.com/macros/s/AKfycbyyRyDdoN3MSjWGFVCVAKkFhKAggTuESbCFN5hQ8bMSBxumnSqqFV8Ln9NRDuWhdh6XTQ/exec",
 
   title: "Explore the Abyss",
   tagline: "Daily endgame dungeon runs, Monday to Friday at 21:00 server time.",
